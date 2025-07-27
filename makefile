@@ -17,9 +17,10 @@ run:
 build:
 	docker build -t $(APP_NAME) .
 
-## Run Docker container (port 8501)
+## Run Docker container in background (detached mode)
 run:
-	docker run --rm -p $(DOCKER_PORT):8501 $(APP_NAME)
+	docker run -d --name $(APP_NAME)-container -p $(DOCKER_PORT):8501 $(APP_NAME)
+
 
 ## Clean up __pycache__ and temp files
 clean:
