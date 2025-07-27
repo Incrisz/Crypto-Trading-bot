@@ -25,9 +25,10 @@ def run_bot():
 
         # Fetch instrument info
         info = session.get_instruments_info(category="spot", symbol=symbol)['result']['list'][0]
-        min_notional = float(info['minNotionalValue'])
+        min_notional_value = float(info['minNotionalValue'])
         min_qty = float(info['minSize'])
         lot_size = float(info['lotSize'])
+
 
         # Fetch current price
         price = float(session.get_tickers(category="spot", symbol=symbol)['result']['list'][0]['lastPrice'])
@@ -37,8 +38,8 @@ def run_bot():
         qty = round(usdt_to_spend / price, precision)
 
         # Validate against constraints
-        if qty < min_qty or qty * price < min_notional:
-            st.error(f"❌ Min qty: {min_qty}, Min value: ${min_notional}")
+        if qty < min_qty or qty * price < min_notional_value:
+            st.error(f"Min qty: {min_qty}, Min notional: ${min_notional_value}")
             return
 
         st.session_state.running = True
