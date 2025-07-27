@@ -14,11 +14,12 @@ run:
 	streamlit run bot.py
 
 ## Build Docker image
-build:
-	docker build -t $(APP_NAME) .
+# build:
+# 	docker build -t $(APP_NAME) .
 
-## Run Docker container in background (detached mode)
+## build & Run Docker container in background (detached mode)
 run:
+	docker build -t $(APP_NAME) .
 	docker run -d --name $(APP_NAME)-container -p $(DOCKER_PORT):8501 $(APP_NAME)
 
 
