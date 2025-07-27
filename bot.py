@@ -28,15 +28,19 @@ log_area = st.empty()
 def run_bot():
     try:
         session = HTTP(api_key=api_key, api_secret=api_secret, testnet=testnet_mode)
-        price_data = session.get_ticker(symbol=symbol)
-        buy_price = float(price_data['result']['lastPrice'])
+
+        # Step 1: Get current price (buy price)
+        price_data = session.get_tickers(category="spot", symbol=symbol)
+        buy_price = float(price_data['result']['list'][0]['lastPrice'])
 
         st.session_state.running = True
         log_area.markdown(f"✅ Bought at: **${buy_price:.2f}**")
 
+        # Step 2: Calculate target price
         target_price = buy_price * (1 + take_profit_percent / 100)
         log_area.markdown(f"🎯 Target price: **${target_price:.2f}**")
 
+        # Step 3: Place buy order
         session.place_order(
             category="spot",
             symbol=symbol,
@@ -45,9 +49,10 @@ def run_bot():
             qty=quantity
         )
 
+        # Step 4: Monitor until target is hit
         while st.session_state.running:
-            price_data = session.get_ticker(symbol=symbol)
-            current_price = float(price_data['result']['lastPrice'])
+            price_data = session.get_tickers(category="spot", symbol=symbol)
+            current_price = float(price_data['result']['list'][0]['lastPrice'])
 
             log_area.markdown(f"📈 Current price: **${current_price:.2f}**")
 
