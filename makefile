@@ -1,6 +1,6 @@
 # Makefile for Bybit Streamlit Trading Bot
 
-APP_NAME = bybit-streamlit-bot
+APP_NAME = Trading-bot
 DOCKER_PORT = 8501
 
 .PHONY: run install build docker-run docker-build clean
