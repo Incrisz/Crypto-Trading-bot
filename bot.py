@@ -1,4 +1,3 @@
-# app.py (Improved: checks instrument info and min notional)
 import streamlit as st
 import time
 from pybit.unified_trading import HTTP
@@ -24,41 +23,46 @@ def run_bot():
     try:
         session = HTTP(api_key=api_key, api_secret=api_secret, testnet=testnet)
 
-        # Fetch spot instrument info
+        # Fetch instrument info
         info = session.get_instruments_info(category="spot", symbol=symbol)['result']['list'][0]
-        min_notional = float(info['minNotional'])  # e.g. 5
+        min_notional = float(info['minNotionalValue'])
         min_qty = float(info['minSize'])
         lot_size = float(info['lotSize'])
 
-        price_data = session.get_tickers(category="spot", symbol=symbol)
-        price = float(price_data['result']['list'][0]['lastPrice'])
+        # Fetch current price
+        price = float(session.get_tickers(category="spot", symbol=symbol)['result']['list'][0]['lastPrice'])
 
-        qty = round(usdt_to_spend / price, int( abs(len(str(lot_size).split('.')[-1])) ))
+        # Calculate qty with correct precision
+        precision = int(abs(len(str(lot_size).split('.')[-1])))
+        qty = round(usdt_to_spend / price, precision)
 
+        # Validate against constraints
         if qty < min_qty or qty * price < min_notional:
-            st.error(f"Min qty: {min_qty}, Min value: ${min_notional}")
+            st.error(f"❌ Min qty: {min_qty}, Min value: ${min_notional}")
             return
 
         st.session_state.running = True
-        log.markdown(f"✅ Buying {qty} {symbol[:-4]} at ${price:.2f}")
+        log.markdown(f"✅ Price: **${price:.2f}**, Buying **{qty} {symbol[:-4]}**")
 
         target = price * (1 + take_profit_percent / 100)
-        log.markdown(f"🎯 Target: ${target:.2f}")
+        log.markdown(f"🎯 Target: **${target:.2f}**")
 
         session.place_order(category="spot", symbol=symbol,
                             side="Buy", order_type="Market", qty=str(qty))
+        log.markdown("📥 Buy order placed.")
 
+        # Monitor until target reached
         while st.session_state.running:
-            current = float(session.get_tickers(category="spot", symbol=symbol)
-                            ['result']['list'][0]['lastPrice'])
-            log.markdown(f"📈 Price: ${current:.2f}")
+            current = float(session.get_tickers(category="spot", symbol=symbol)['result']['list'][0]['lastPrice'])
+            log.markdown(f"📈 Market: **${current:.2f}**")
+
             if current >= target:
                 session.place_order(category="spot", symbol=symbol,
                                     side="Sell", order_type="Market", qty=str(qty))
-                log.markdown(f"💰 Sold at ${current:.2f}")
+                log.markdown(f"💰 Sold at **${current:.2f}**")
                 st.session_state.running = False
-                break
-            time.sleep(5)
+            else:
+                time.sleep(5)
 
     except Exception as e:
         st.error(f"❌ {e}")
@@ -68,4 +72,4 @@ if start and not st.session_state.running:
     run_bot()
 if stop:
     st.session_state.running = False
-    st.warning("🛑 Bot manually stopped")
+    st.warning("🛑 Bot manually stopped.")
